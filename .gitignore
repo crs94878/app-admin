@@ -1,0 +1,24 @@
+# Package Files #
+*.jar
+*.war
+*.ear
+
+# IntelliJ Files #
+*.iws
+.*.ipr
+*.iml
+target/
+deploy/
+classes/
+
+# IntelliJ Files #
+.idea
+
+# NetBeans #
+/nbproject/
+
+#External dependencies
+!/src/main/resources/dependencies/*.jar
+
+# maven install
+!/mvn-install/*
