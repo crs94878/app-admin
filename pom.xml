@@ -5,13 +5,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>ru.sshell</groupId>
-    <artifactId>po-admin</artifactId>
+    <artifactId>app-admin</artifactId>
     <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
     <modules>
-        <module>po-admin-server</module>
-        <module>po-client</module>
-        <module>po-admin-front</module>
+        <module>app-admin-server</module>
+        <module>app-client</module>
+        <module>app-admin-front</module>
     </modules>
     <properties>
         <spring.boot.version>2.2.0.RELEASE</spring.boot.version>
