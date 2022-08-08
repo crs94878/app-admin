@@ -10,7 +10,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 @EnableScheduling
-@Service
 public class AppScheduler {
     private static final Logger LOGGER = LoggerFactory.getLogger(AppScheduler.class);
 

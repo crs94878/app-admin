@@ -1,35 +1,33 @@
 package ru.sshell.dao.mapper;
 
 import org.springframework.jdbc.core.RowMapper;
-import ru.sshell.model.TasktStatusInfo;
-import ru.sshell.model.TaskData;
-import ru.sshell.model.enums.OS;
-import ru.sshell.model.enums.OSType;
-import ru.sshell.model.enums.TaskStatus;
-import ru.sshell.model.enums.TaskProcessType;
+import ru.sshell.model.*;
+
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class TaskClientStatusInfoRowMapper implements RowMapper<TasktStatusInfo> {
+public class TaskClientStatusInfoRowMapper implements RowMapper<TaskStatusInfo> {
     @Override
-    public TasktStatusInfo mapRow(ResultSet resultSet, int i) throws SQLException {
-        return new TasktStatusInfo()
-                .setStatus(TaskStatus.getTaskStatusByName(resultSet.getString("status")))
-                .setTaskData(mapTaskData(resultSet));
+    public TaskStatusInfo mapRow(ResultSet resultSet, int i) throws SQLException {
+        return TaskStatusInfo.builder()
+                .setStatus(TaskStatus.getTaskStatus(resultSet.getString("status")))
+                .setTaskData(mapTaskData(resultSet))
+                .build();
     }
 
     private TaskData mapTaskData(ResultSet resultSet) throws SQLException {
         TaskData taskData =  new TaskData();
         taskData.setId(resultSet.getLong("id"));
         taskData.setName(resultSet.getString("name"));
-        taskData.setTaskProcessType(TaskProcessType
-                .getTaskProcessTypeByName(resultSet.getString("taskType")));
+        taskData.setTaskProcessType(
+                TaskProcessType.getTaskProcessType(resultSet.getString("task_type"))
+        );
         taskData.setVersion(resultSet.getString("version"));
-        taskData.setOs(OS.getOSByName(resultSet.getString("os")));
-        taskData.setOsType(OSType.getOsTypeByName(resultSet.getString("osType")));
-        taskData.setPathToRunFile(resultSet.getString("pathToRunFile"));
-        taskData.setTorrentFile(resultSet.getString("torrentFile"));
+        taskData.setOs(OS.getOs(resultSet.getString("os")));
+        taskData.setOsType(OSType.getOsType(resultSet.getString("os_type")));
+        taskData.setPathToRunFile(resultSet.getString("path_to_run_file"));
+        taskData.setTorrentFile(resultSet.getString("torrent_file"));
         return taskData;
     }
 }

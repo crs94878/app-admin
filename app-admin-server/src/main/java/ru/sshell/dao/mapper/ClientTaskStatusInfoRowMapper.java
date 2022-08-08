@@ -2,11 +2,7 @@ package ru.sshell.dao.mapper;
 
 
 import org.springframework.jdbc.core.RowMapper;
-import ru.sshell.model.ClientData;
-import ru.sshell.model.ClientTaskStatusInfo;
-import ru.sshell.model.enums.OS;
-import ru.sshell.model.enums.OSType;
-import ru.sshell.model.enums.TaskStatus;
+import ru.sshell.model.*;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -16,16 +12,17 @@ public class ClientTaskStatusInfoRowMapper implements RowMapper<ClientTaskStatus
     @Override
     public ClientTaskStatusInfo mapRow(ResultSet resultSet, int i) throws SQLException {
         return new ClientTaskStatusInfo()
-                .setTaskStatus(TaskStatus.getTaskStatusByName(resultSet.getString("status")))
+                .setTaskStatus(TaskStatus.getTaskStatus(resultSet.getString("status")))
                 .setClientData(mapClientData(resultSet));
     }
 
     private ClientData mapClientData(ResultSet resultSet) throws SQLException {
-        return new ClientData()
+        return ClientData.builder()
                 .setId(resultSet.getLong("id"))
-                .setHostname(resultSet.getString("hostName"))
-                .setOs(OS.getOSByName(resultSet.getString("os")))
-                .setOsType(OSType.getOsTypeByName(resultSet.getString("osType")))
-                .setMacAddr(resultSet.getString("macAddr"));
+                .setHostname(resultSet.getString("host_name"))
+                .setOs(OS.getOs(resultSet.getString("os")))
+                .setOsType(OSType.getOsType(resultSet.getString("os_type")))
+                .setMacAddr(resultSet.getString("mac_addr"))
+                .build();
     }
 }

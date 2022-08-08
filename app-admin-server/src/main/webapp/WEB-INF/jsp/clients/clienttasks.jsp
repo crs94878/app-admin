@@ -30,8 +30,8 @@
                 <td style="border: 1px solid black;">${task.taskData.name}</td>
                 <td style="border: 1px solid black;">${task.taskData.taskProcessType.type}</td>
                 <td style="border: 1px solid black;">${task.taskData.version}</td>
-                <td style="border: 1px solid black;">${task.taskData.os.os}</td>
-                <td style="border: 1px solid black;">${task.taskData.osType.osType}</td>
+                <td style="border: 1px solid black;">${task.taskData.os.name}</td>
+                <td style="border: 1px solid black;">${task.taskData.osType.type}</td>
                 <td style="border: 1px solid black;">${task.taskData.pathToRunFile}</td>
                 <td style="border: 1px solid black; text-align: center">${task.taskData.torrentFile != null ? "<img src=\"https://iconizer.net/files/Puck_icons_pack_II/thumb/128/uTorrent.png\" width=\"30\" height=\"30\">" : ""}</td>
                 <td style="border: 1px solid black;">${task.status}</td>

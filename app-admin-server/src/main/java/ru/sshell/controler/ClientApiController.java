@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import ru.sshell.model.*;
+import ru.sshell.model.dto.MachineDataDto;
 import ru.sshell.model.dto.ClientTaskStatusDto;
 import ru.sshell.model.dto.TaskPackDto;
 import ru.sshell.service.TaskService;
@@ -14,7 +15,7 @@ import ru.sshell.service.AuthorizationService;
 @Controller
 @RequestMapping("/api/client")
 public class ClientApiController extends BaseController {
-    private static final Logger logger = LoggerFactory.getLogger(ClientApiController.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(ClientApiController.class);
 
     private final AuthorizationService authorizationService;
     private final TaskService taskService;
@@ -27,18 +28,18 @@ public class ClientApiController extends BaseController {
 
     @PostMapping(path = "/checkin")
     @ResponseBody
-    public SessionData clientCheckin(@RequestBody ClientData clientData) {
-        logger.debug("Received request for checkin: {}", clientData);
+    public SessionData clientCheckin(@RequestBody MachineDataDto clientData) {
+        LOGGER.debug("Received request for checkin: {}", clientData);
         SessionData sessionData = authorizationService.clientCheckIn(clientData);
-        logger.debug("Get response: {}", sessionData);
+        LOGGER.debug("Get response: {}", sessionData);
         return sessionData;
     }
     @GetMapping("/tasks")
     @ResponseBody
     public TaskPackDto getClientTaskList(@RequestParam(name = "clientId", required = true) Long clientId) {
-        logger.debug("Received request for get clients tasks");
+        LOGGER.debug("Received request for get clients tasks");
         TaskPackDto taskPackDto = new TaskPackDto(taskService.getActiveTasksByClientID(clientId));
-        logger.debug("Get response data: {}", taskPackDto);
+        LOGGER.debug("Get response data: {}", taskPackDto);
         return taskPackDto;
     }
 
@@ -52,7 +53,7 @@ public class ClientApiController extends BaseController {
     @PostMapping("/task/status-toggle")
     @ResponseBody
     public String toggleTaskStatus(@RequestBody ClientTaskStatusDto clientTaskStatusDto) {
-        logger.debug("Received request for toggle status: {}", clientTaskStatusDto);
+        LOGGER.debug("Received request for toggle status: {}", clientTaskStatusDto);
         taskService.updateStatus(clientTaskStatusDto);
         return "Success";
     }

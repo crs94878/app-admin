@@ -1,6 +1,5 @@
 package ru.sshell.model;
 
-import ru.sshell.model.enums.TaskStatus;
 
 /**
  * Класс информации по клиенту и статусу выполненой задаче

@@ -26,8 +26,8 @@
             <tr>
                 <td style="border: 1px solid black;">${client.id}</td>
                 <td style="border: 1px solid black;">${client.hostname}</td>
-                <td style="border: 1px solid black;">${client.os.os}</td>
-                <td style="border: 1px solid black;">${client.osType.osType}</td>
+                <td style="border: 1px solid black;">${client.os.name}</td>
+                <td style="border: 1px solid black;">${client.osType.type}</td>
                 <td style="border: 1px solid black;">${client.macAddr}</td>
                 <td style="border: 1px solid black;">
                     <input type="checkbox" name="${client.id}" id="blocked" class="checkbox" ${client.blocked ? "checked" : ""} value=${client.blocked}/>

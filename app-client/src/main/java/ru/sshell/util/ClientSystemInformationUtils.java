@@ -2,10 +2,13 @@ package ru.sshell.util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.lang.NonNull;
 import ru.sshell.model.ClientData;
 import ru.sshell.model.OS;
 import ru.sshell.model.OSType;
 
+import javax.annotation.Nullable;
+import javax.annotation.ParametersAreNonnullByDefault;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -17,6 +20,7 @@ import java.util.stream.IntStream;
 /**
  * Класс для определения инфомации о системы клиента, в которой запущена программа
  */
+@ParametersAreNonnullByDefault
 public class ClientSystemInformationUtils {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ClientSystemInformationUtils.class);
@@ -35,22 +39,26 @@ public class ClientSystemInformationUtils {
      * @return системные данные клиента
      */
     private static ClientData initClientSystemData() {
-        ClientData clientData =  new ClientData();
-        clientData.setOs(OS.getOsByName(System.getProperty(OS_NAME_PROP)));
-        clientData.setMacAddr(getMacAddress());
-        clientData.setOsType(OSType.spotOSType(System.getProperty(OS_ARCH_PROP)));
+        InetAddress innetAddress = null;
         try {
-            clientData.setHostname(InetAddress.getLocalHost().getHostName());
+            innetAddress = InetAddress.getLocalHost();
         } catch (UnknownHostException e) {
-            e.printStackTrace();
+            LOGGER.error("Error while fill client hostname", e);
         }
-        return clientData;
+        return ClientData.builder()
+                .setOs(OS.getOs(System.getProperty(OS_NAME_PROP)))
+                .setMacAddr(getMacAddress())
+                .setOsType(OSType.getOsType(System.getProperty(OS_ARCH_PROP)))
+                .setHostname(innetAddress != null
+                        ? innetAddress.getHostName() : null)
+                .build();
     }
 
     /**
      * Определение mac адреса
      * @return мак адрес
      */
+    @NonNull
     private static String getMacAddress() {
         StringBuilder macAddressBuilder = new StringBuilder();
         try {
@@ -79,6 +87,7 @@ public class ClientSystemInformationUtils {
      * @return              корректный интерфейс
      * @throws SocketException ошибка сокета
      */
+    @Nullable
     private static NetworkInterface spotNetWorkInt(InetAddress localHOstName) throws SocketException {
         Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
         while (networkInterfaces.hasMoreElements()) {

@@ -1,6 +1,6 @@
 package ru.sshell.model.dto;
 
-import ru.sshell.model.enums.TaskStatus;
+import ru.sshell.model.TaskStatus;
 
 public class ClientTaskStatusDto {
     private SimpleClientTaskDataDto clientTaskData;

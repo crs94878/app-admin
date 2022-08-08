@@ -21,11 +21,12 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Controller
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 @RequestMapping("/api/admin")
 @Logging(level = LoggingLvl.INFO)
 public class AdminApiController {
 
-    private static final Logger logger = LoggerFactory.getLogger(AdminApiController.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AdminApiController.class);
 
     private final AuthorizationService authorizationService;
     private final ClientService clientService;
@@ -42,28 +43,28 @@ public class AdminApiController {
 
     @PostMapping("/auth")
     @ResponseBody
-    public SessionData adminAuthorization(@RequestBody AdminAuthorizationData authData) {
-        logger.debug("Received request: {}", authData);
+    public SessionData adminAuthorization(@RequestBody AdminAuthorizationDataDto authData) {
+        LOGGER.debug("Received request: {}", authData);
         SessionData sessionDataDto = authorizationService.adminAuth(authData);
-        logger.debug("Handle response: {}", sessionDataDto);
+        LOGGER.debug("Handle response: {}", sessionDataDto);
         return sessionDataDto;
     }
 
-    /* возвращает страницу авторизации*/
+    /** возвращает страницу авторизации*/
     @GetMapping("/login")
     public String adminLoginPage()
     {
         return "login";
     }
 
-    /* возвращает главную страницу */
+    /** возвращает главную страницу */
     @GetMapping("/main")
     public String adminMainPage()
     {
         return "main";
     }
 
-    /* возвращает страницу со списком существующих задач */
+    /** возвращает страницу со списком существующих задач */
     @GetMapping("/all-tasks")
     public ModelAndView adminTasksPage()
     {
@@ -123,7 +124,7 @@ public class AdminApiController {
         taskService.updateTask(taskData);
     }
 
-    /* Метод должен формировать список клиентов */
+    /** Метод должен формировать список клиентов */
     @GetMapping("/all-clients")
     @ResponseBody
     public ModelAndView adminClients() {
@@ -144,21 +145,21 @@ public class AdminApiController {
     @GetMapping("/client-tasks")
     public ModelAndView adminClientTasks(@RequestParam("clientId") Long id) {
         ModelAndView modelAndView = new ModelAndView("clients/clienttasks");
-        List<TasktStatusInfo> taskDataList = taskService.getTasksForClient(id);
+        List<TaskStatusInfo> taskDataList = taskService.getTasksForClient(id);
         if (!Objects.isNull(taskDataList))
             modelAndView.addObject("tasklist", taskDataList);
         modelAndView.addObject("clientId", id);
         return modelAndView;
     }
 
-    /* Метод назначения задачи на клиента */
+    /** Метод назначения задачи на клиента */
     @PostMapping("/assign")
     @ResponseBody
     public void adminAssignTask(@RequestBody SimpleClientTaskDataDto simpleClientTaskDataDto) {
         taskService.addTaskForClient(simpleClientTaskDataDto.getClientId(), simpleClientTaskDataDto.getTaskId());
     }
 
-    /* Метод отмены назначенной на клиента задачи */
+    /** Метод отмены назначенной на клиента задачи */
     @DeleteMapping("/cancel-task")
     @ResponseBody
     public void adminAssignTaskCancel(@RequestBody SimpleClientTaskDataDto simpleClientTaskDataDto) {
@@ -168,7 +169,7 @@ public class AdminApiController {
     @GetMapping("/add-task-to-client-page")
     public ModelAndView addTaskToClientPage(@RequestParam("clientId") Long id) {
         ModelAndView modelAndView = new ModelAndView("clients/clientaddtask");
-        ClientData client = clientService.getClient(id);
+        ClientData client = clientService.findClientByHostName(id);
         List<TaskData> taskDataList = taskService.getAllTasks().stream()
                 .filter(a->a.getOs() == client.getOs() && a.getOsType() == client.getOsType())
                 .collect(Collectors.toList());

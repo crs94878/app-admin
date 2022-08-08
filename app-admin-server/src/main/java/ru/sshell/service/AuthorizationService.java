@@ -1,117 +1,149 @@
 package ru.sshell.service;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import ru.sshell.dao.AuthorizationDao;
 import ru.sshell.exception.ClientAuthorizationException;
-import ru.sshell.model.AdminAuthorizationData;
+import ru.sshell.exception.ResourceBlockedException;
+import ru.sshell.model.AdminAuthorizationDataDto;
 import ru.sshell.model.ClientData;
 import ru.sshell.model.SessionData;
+import ru.sshell.model.dto.MachineDataDto;
 import ru.sshell.util.TokenGenerator;
 
-import java.util.Date;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 /**
  * Сервис для выполнения авторизации
  */
-@Service
 public class AuthorizationService {
 
-    private static final Logger logger = LoggerFactory.getLogger(AuthorizationService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AuthorizationService.class);
+    private static final int TOKEN_UPDATE_EXP_HOUR = 24;
 
-    @Autowired
-    private AuthorizationService authorizationService;
     private final AuthorizationDao authorizationDao;
     private final ClientService clientService;
+    private final TransactionTemplate transactionTemplate;
 
-
-    @Autowired
-    public AuthorizationService(AuthorizationDao authorizationDao, ClientService clientService) {
+    public AuthorizationService(AuthorizationDao authorizationDao,
+                                ClientService clientService,
+                                TransactionTemplate transactionTemplate) {
         this.authorizationDao = authorizationDao;
         this.clientService = clientService;
+        this.transactionTemplate = transactionTemplate;
     }
 
     @Transactional
-    public SessionData adminAuth(AdminAuthorizationData authData) {
-        logger.debug("Start authorization by admin console: {}", authData);
-        List<Long> result = authorizationDao.authorization(authData);
-        if (CollectionUtils.isEmpty(result)) {
-            throw new ClientAuthorizationException(HttpStatus.NOT_FOUND, "Admin not found in DB");
-        }
-        List<SessionData> sessionDataList = authorizationDao.loadSessionDataByLoginId(result.get(0));
-        if (CollectionUtils.isEmpty(sessionDataList)) {
-            SessionData sessionData = createSessionData(result.get(0), SessionData.SessionType.ADMIN);
-            authorizationDao.addSessionData(sessionData);
+    public SessionData adminAuth(AdminAuthorizationDataDto authData) {
+        try {
+            LOGGER.debug("Start authorization by admin console: {}", authData);
+            Long result = authorizationDao.authorization(authData).stream()
+                    .findFirst()
+                    .orElseThrow(() ->
+                            new ResourceBlockedException(HttpStatus.NOT_FOUND, "Admin not found in DB")
+                    );
+            SessionData sessionData = authorizationDao.loadSessionDataByLoginId(result)
+                    .stream()
+                    .findFirst()
+                    .orElseGet(
+                            () -> {
+                                LOGGER.debug("Not found session data, will be login");
+                                return createSessionData(result, SessionData.SessionType.ADMIN);
+                            });
+            transactionTemplate.execute(
+                    (transactionStatus) -> {
+                        addOrUpdateSessionData(sessionData);
+                        return transactionStatus;
+                    }
+            );
             return sessionData;
+        } catch (Exception ex) {
+            LOGGER.error("Error while admin auth", ex);
+            throw new ResourceBlockedException(HttpStatus.FORBIDDEN, "Admin not found in DB");
         }
-        SessionData sessionData = sessionDataList.get(0);
-        authorizationService.updateSessionData(sessionData.getToken());
-        return sessionData;
-    }
-    /*
-     * Метод
-     *
-     */
-    @Transactional
-    public SessionData clientCheckIn(ClientData authData) {
-        logger.debug("Start authorization by client: {}", authData);
-        List<ClientData> clientDataList = clientService.getClient(authData.getHostname());
-        checkFoundClient(clientDataList, authData);
-        ClientData client = clientDataList.get(0);
-        checkClientBlocked(client);
-        List<SessionData> sessionDataList = authorizationDao.loadSessionDataByLoginId(client.getId());
-        SessionData sessionData = checkSessionData(sessionDataList, client);
-        logger.debug("Return auth session: {}", sessionData);
-        return sessionData;
     }
 
-    private void checkFoundClient(List<ClientData> clientDataList, ClientData authData) {
-        if (CollectionUtils.isEmpty(clientDataList)) {
-            clientService.addClient(authData);
-            logger.error("Client not found by data: {}", authData);
-            throw new ClientAuthorizationException(HttpStatus.UNAUTHORIZED, "Client tasks can't start work," +
-                    " because he is unathorized");
-        }
+    @Transactional
+    public SessionData clientCheckIn(MachineDataDto authData) {
+        LOGGER.debug("Start authorization by client: {}", authData);
+        ClientData client = clientService.findClientByHostName(
+                authData.getHostname()
+        )
+                .stream()
+                .findFirst()
+                .orElseGet(
+                        () -> {
+                            LOGGER.error("Client not found by data: {}", authData);
+                            return clientService.createNewClient(
+                                    authData
+                            );
+                        }
+                );
+        checkClientBlocked(client);
+        return checkInSessionData(
+                authorizationDao.loadSessionDataByLoginId(client.getId()),
+                client
+        );
     }
 
     private void checkClientBlocked(ClientData client) {
         if (client.getBlocked()) {
-            logger.error("Blocked process for client: {}", client);
+            LOGGER.error("Blocked process for client: {}", client);
             throw new ClientAuthorizationException(HttpStatus.FORBIDDEN, "Client tasks can't start work," +
                     " because he is blocked");
         }
     }
 
-    private SessionData checkSessionData(List<SessionData> sessionDataList, ClientData client) {
-        SessionData sessionData;
-        if (CollectionUtils.isNotEmpty(sessionDataList)) {
-            sessionData = sessionDataList.get(0);
-            authorizationService.updateSessionData(sessionData.getToken());
-        } else {
-            sessionData =  createSessionData(client.getId(), SessionData.SessionType.CLIENT);
-            authorizationDao.addSessionData(sessionData);
-        }
+    private SessionData checkInSessionData(List<SessionData> sessionDataList, ClientData client) {
+        SessionData sessionData = sessionDataList.stream()
+                .findFirst()
+                .orElseGet(
+                        () -> createSessionData(client.getId(), SessionData.SessionType.CLIENT)
+                );
+        transactionTemplate.execute(
+                (transactionStatus) -> {
+                    addOrUpdateSessionData(sessionData);
+                    return transactionStatus;
+                }
+        );
+        LOGGER.debug("Added auth session: {}", sessionData);
         return sessionData;
     }
 
-    private SessionData createSessionData(long clientId, SessionData.SessionType sessionType) {
-        SessionData sessionData = new SessionData();
-        sessionData.setToken(TokenGenerator.generateToken());
-        sessionData.setClientId(clientId);
-        sessionData.setSessionType(sessionType);
-        sessionData.setExpDate(new Date());
-        return sessionData;
+    /**
+     * Создать данные по сессии
+     * @param userId  id пользователя
+     * @param sessionType
+     * @return
+     */
+    private SessionData createSessionData(long userId, SessionData.SessionType sessionType) {
+        return SessionData.builder()
+                .setToken(TokenGenerator.generateToken())
+                .setUserId(userId)
+                .setSessionType(sessionType)
+                .setExpDateTime(Instant.now())
+                .build();
     }
 
     @Transactional
-    public void updateSessionData(String token) {
-        authorizationDao.updateSessionData(token);
+    public void addOrUpdateSessionData(SessionData sessionData) {
+        authorizationDao.addOrUpdateSessionData(
+                SessionData
+                        .builder()
+                        .of(sessionData)
+                        .setExpDateTime(spotDate())
+        .build());
+    }
+
+
+    private Instant spotDate() {
+        Instant timeInstant = Instant.now();
+        return timeInstant.plus(TOKEN_UPDATE_EXP_HOUR, ChronoUnit.HOURS);
     }
 
     public List<SessionData> loadSessionDataByToken(String token) {

@@ -32,7 +32,7 @@ public class WorkScheduler {
             if (!lock.tryLock()) {
                 return;
             }
-            taskWorker.work();
+            taskWorker.processInstallApplications();
         } catch (Exception ex) {
             LOGGER.error("Error while scheduler work", ex);
         } finally {

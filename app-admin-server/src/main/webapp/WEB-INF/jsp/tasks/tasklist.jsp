@@ -29,8 +29,8 @@
                         <td style="border: 1px solid black;">${task.name}</td>
                         <td style="border: 1px solid black;">${task.taskProcessType.type}</td>
                         <td style="border: 1px solid black;">${task.version}</td>
-                        <td style="border: 1px solid black;">${task.os.os}</td>
-                        <td style="border: 1px solid black;">${task.osType.osType}</td>
+                        <td style="border: 1px solid black;">${task.os.name}</td>
+                        <td style="border: 1px solid black;">${task.osType.type}</td>
                         <td style="border: 1px solid black;">${task.pathToRunFile}</td>
                         <td style="border: 1px solid black; text-align: center">${task.torrentFile != null ? "<img src=\"https://iconizer.net/files/Puck_icons_pack_II/thumb/128/uTorrent.png\" width=\"30\" height=\"30\">" : ""}</td>
                         <td style="border: 1px solid black;"><spring:form method="POST" action="delete-task"><button name="id" value="${task.id}">Удалить</button></spring:form></td>

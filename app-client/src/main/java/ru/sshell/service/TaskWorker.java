@@ -15,7 +15,7 @@ import ru.sshell.util.ClientSystemInformationUtils;
 import java.util.List;
 
 @Service
-public class TaskWorker {
+public class cdTaskWorker {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TaskWorker.class);
     private RestService restService;
@@ -28,7 +28,15 @@ public class TaskWorker {
     }
 
 
-    public void work() throws InterruptedException {
+    public void processInstallApplications() throws InterruptedException {
+        boolean successProcess;
+        do {
+           successProcess = workOrNeedRetry();
+        } while (!successProcess);
+    }
+
+
+    private boolean workOrNeedRetry() throws InterruptedException {
         try {
             LOGGER.debug("Start checkin process");
             restService.checkin(ClientSystemInformationUtils.CLIENT_DATA);
@@ -42,11 +50,12 @@ public class TaskWorker {
                 LOGGER.error("Auth error. Service response code: " + clEx.getStatusCode()
                         + ". Response message: " + clEx.getResponseBodyAsString());
                 Thread.sleep(2000);
-                work();
+                return false;
             }
             LOGGER.error("Error requested service, response code: " + clEx.getStatusCode().toString()
                     + " and response body: " + clEx.getResponseBodyAsString());
         }
+        return true;
     }
 
     private void workByTaskId(Long taskId) {

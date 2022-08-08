@@ -26,15 +26,15 @@ classes/
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+app-admin-front/frontend/node_modules
 /.pnp
 .pnp.js
 
 # testing
-/coverage
+app-admin-front/frontend/coverage
 
 # production
-/build
+app-admin-front/frontend/build
 
 # misc
 .DS_Store

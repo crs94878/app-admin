@@ -7,6 +7,8 @@ import org.springframework.http.HttpRequest;
 import org.springframework.http.client.ClientHttpRequestExecution;
 import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 import ru.sshell.model.SessionData;
 
 import java.io.IOException;
@@ -29,7 +31,7 @@ public class RootRestService {
     }
 
     /**
-     * Метод добавляет к запросу хеадер авторизация (в котором енсть токен) в зависимости от необходимости
+     * Метод добавляет к запросу хеадер авторизация (в котором есть токен) в зависимости от необходимости
      * @param request   запрос
      * @param body      тело запроса
      * @param execution контекст http запроса
@@ -38,7 +40,7 @@ public class RootRestService {
      */
     private ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution) throws IOException {
         StackTraceElement[] stackTraces = Thread.currentThread().getStackTrace();
-        Arrays.stream(stackTraces).forEach(stackTraceElement -> findAutAnnotation(stackTraceElement, request));
+        Arrays.stream(stackTraces).forEach(stackTraceElement -> findChekcAuthAnnotation(stackTraceElement, request));
         return execution.execute(request, body);
     }
 
@@ -47,17 +49,18 @@ public class RootRestService {
      * @param stackTraceElement стек вызовов
      * @param request запрос
      */
-    private void findAutAnnotation(StackTraceElement stackTraceElement, HttpRequest request) {
-        if (!request.getURI().toString().contains("checkin")) {
-            try {
-                Method[] methods = Class.forName(stackTraceElement.getClassName()).getDeclaredMethods();
-                for (Method method : methods) {
-                    CheckAuthorisation authorisation = method.getDeclaredAnnotation(CheckAuthorisation.class);
-                    setHeaderIfNeed(authorisation, request);
-                }
-            } catch (ClassNotFoundException e) {
-                LOGGER.error("Error while add headers", e);
+    private void findChekcAuthAnnotation(StackTraceElement stackTraceElement, HttpRequest request) {
+        if (request.getURI().toString().contains("checkin")) {
+            return;
+        }
+        try {
+            Method[] methods = Class.forName(stackTraceElement.getClassName()).getDeclaredMethods();
+            for (Method method : methods) {
+                CheckAuthorisation authorisation = method.getDeclaredAnnotation(CheckAuthorisation.class);
+                setAuthHeaderIfNeed(authorisation, request);
             }
+        } catch (ClassNotFoundException e) {
+            LOGGER.error("Error while add headers", e);
         }
     }
 
@@ -66,7 +69,7 @@ public class RootRestService {
      * @param authorisation аннотация авотиризации
      * @param request запрос
      */
-    private void setHeaderIfNeed(CheckAuthorisation authorisation, HttpRequest request) {
+    private void setAuthHeaderIfNeed(CheckAuthorisation authorisation, HttpRequest request) {
         if (authorisation != null) {
             if (authorisation.disable()) {
                 return;
@@ -78,4 +81,39 @@ public class RootRestService {
         }
         request.getHeaders().set(HttpHeaders.AUTHORIZATION, token);
     }
+
+    /**
+     * Сгенерировать URL с парамтерами для get запроса
+     * @param key        ключ для подстановки в адрес строки
+     * @param param      парамтеры запроса
+     * @param requestUrl конечная точка запроса
+     * @return URL с парамтерами для get запроса
+     */
+    UriComponents buildUrl(Object key, Object param, String requestUrl) {
+        return UriComponentsBuilder.fromHttpUrl(requestUrl).queryParam(key.toString(), param.toString()).build();
+    }
+
+    /**
+     * Функция вызывает метод {@link RestTemplate#postForObject} для отправки post запроса
+     * @param url           конечный адрес запроса
+     * @param request       запрос
+     * @param responseType  тип ответа
+     * @param <T>           параметризированный тип, для типа ответа
+     * @return ответ
+     */
+    <T> T postRequest(String url, Object request, Class<T> responseType) {
+        return restTemplate.postForObject(url, request, responseType);
+    }
+
+    /**
+     * Функция вызывает метод {@link RestTemplate#getForObject} для отправки get запроса
+     * @param url           конечный адрес запроса
+     * @param responseType  тип ответа
+     * @param <T>           параметризированный тип, для типа ответа
+     * @return ответ
+     */
+    <T> T getRequest(String url, Class<T> responseType) {
+        return restTemplate.getForObject(url, responseType);
+    }
+
 }

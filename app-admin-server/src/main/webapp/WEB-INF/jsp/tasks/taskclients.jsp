@@ -24,8 +24,8 @@
             <tr>
                 <td style="border: 1px solid black;">${client.clientData.id}</td>
                 <td style="border: 1px solid black;">${client.clientData.hostname}</td>
-                <td style="border: 1px solid black;">${client.clientData.os.os}</td>
-                <td style="border: 1px solid black;">${client.clientData.osType.osType}</td>
+                <td style="border: 1px solid black;">${client.clientData.os.name}</td>
+                <td style="border: 1px solid black;">${client.clientData.osType.type}</td>
                 <td style="border: 1px solid black;">${client.clientData.macAddr}</td>
                 <td style="border: 1px solid black;">${client.taskStatus}</td>
                 <td style="border: 1px solid black;"><button onclick="deleteClient(${taskId}, ${client.clientData.id})">Отменить</button></td>

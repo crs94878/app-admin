@@ -8,21 +8,19 @@ import ru.sshell.config.AuthHolder;
 import ru.sshell.dao.TaskDao;
 import ru.sshell.model.ClientTaskStatusInfo;
 import ru.sshell.model.TaskData;
-import ru.sshell.model.TasktStatusInfo;
+import ru.sshell.model.TaskStatus;
+import ru.sshell.model.TaskStatusInfo;
 import ru.sshell.model.dto.ClientTaskStatusDto;
 import ru.sshell.model.dto.SimpleClientTaskDataDto;
-import ru.sshell.model.enums.TaskStatus;
 
 import java.util.List;
 
 /**
  * Сервис для работы с задачами
  */
-@Service
 public class TaskService {
-    private TaskDao taskDao;
+    private final TaskDao taskDao;
 
-    @Autowired
     public TaskService(TaskDao taskDao) {
         this.taskDao = taskDao;
     }
@@ -49,7 +47,7 @@ public class TaskService {
         List<TaskData> taskDataList = taskDao.getTaskById(taskId);
         if (CollectionUtils.isNotEmpty(taskDataList)) {
             taskDataList.forEach(taskData -> {
-                ClientTaskStatusDto clientTaskStatusDto = createClientTaskStatusDto(AuthHolder.getAuthData().getClientId(), taskId);
+                ClientTaskStatusDto clientTaskStatusDto = createClientTaskStatusDto(AuthHolder.getAuthData().getUserId(), taskId);
                 updateStatus(clientTaskStatusDto);
             });
             return taskDataList.get(0);
@@ -66,7 +64,7 @@ public class TaskService {
     }
 
 
-    public List<TasktStatusInfo> getTasksForClient(Long id) {
+    public List<TaskStatusInfo> getTasksForClient(Long id) {
         return taskDao.getTasksForClient(id);
     }
 
